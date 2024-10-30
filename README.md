@@ -1,53 +1,58 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 | Linux |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | ----- |
+แนวทางการทำงาน ESP32 project cook book
+1. ระบุตัวอย่างที่ใช้ ว่าเอามาจากตัวอย่างไหน
+   - มาจาก example hello_world
+    ![image](https://github.com/user-attachments/assets/5c7aa610-179b-4f41-bd2f-48ac7fcab965)
+   - ในตัวอย่างนี้เป็นการพิมพ์ Hello world ออกมาและ restartทุกๆ10วินาที จะมีการนับ ถอยหลัง 10-0
+   - โค้ดมีการปรับแก้ไขให้นับจำนวน แสดงข้อมูลเกี่ยวกับชิป ESP32 
+2. ระบุว่า จะแก้ไขตรงไหนบ้าง เพื่ออะไร
+   - แก้ไขโค้ดในส่วนโค้ดไฟล์hello_world_main.c
+```
+#include <stdio.h>
+#include <inttypes.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_chip_info.h"
+#include "esp_system.h"
 
-# Hello World Example
+void app_main(void)
+{
+    printf("Hello from ESP32!\n");
 
-Starts a FreeRTOS task to print "Hello World".
+    // แสดงข้อมูลชิป
+    esp_chip_info_t chip_info;
+    esp_chip_info(&chip_info);
+    printf("CPU Cores: %d, WiFi: %s, Bluetooth: %s\n", 
+           chip_info.cores,
+           (chip_info.features & CHIP_FEATURE_WIFI_BGN) ? "Yes" : "No",
+           (chip_info.features & CHIP_FEATURE_BT) ? "Yes" : "No");
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+    // แสดงข้อมูลหน่วยความจำว่าง
+    printf("Free Heap Size: %" PRIu32 " bytes\n", esp_get_minimum_free_heap_size());
 
-## How to use example
-
-Follow detailed instructions provided specifically for this example.
-
-Select the instructions depending on Espressif chip installed on your development board:
-
-- [ESP32 Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/index.html)
-- [ESP32-S2 Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html)
-
-
-## Example folder contents
-
-The project **hello_world** contains one source file in C language [hello_world_main.c](main/hello_world_main.c). The file is located in folder [main](main).
-
-ESP-IDF projects are built using CMake. The project build configuration is contained in `CMakeLists.txt` files that provide set of directives and instructions describing the project's source files and targets (executable, library, or both).
-
-Below is short explanation of remaining files in the project folder.
+    // นับถอยหลังและรีสตาร์ท
+    for (int i = 10; i >= 0; i--) {
+        printf("Restarting in %d seconds...\n", i);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+    printf("Restarting now.\n");
+    esp_restart();
+}
 
 ```
-├── CMakeLists.txt
-├── pytest_hello_world.py      Python script used for automated testing
-├── main
-│   ├── CMakeLists.txt
-│   └── hello_world_main.c
-└── README.md                  This is the file you are currently reading
-```
-
-For more information on structure and contents of ESP-IDF projects, please refer to Section [Build System](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html) of the ESP-IDF Programming Guide.
-
-## Troubleshooting
-
-* Program upload failure
-
-    * Hardware connection is not correct: run `idf.py -p PORT monitor`, and reboot your board to see if there are any output logs.
-    * The baud rate for downloading is too high: lower your baud rate in the `menuconfig` menu, and try again.
-
-## Technical support and feedback
-
-Please use the following feedback channels:
-
-* For technical queries, go to the [esp32.com](https://esp32.com/) forum
-* For a feature request or bug report, create a [GitHub issue](https://github.com/espressif/esp-idf/issues)
-
-We will get back to you as soon as possible.
+3. แสดงขั้นตอนการทำ project
+   - สร้างโปรเจคจาก example   hello_world
+   - ทดสอบการทำงานของโปรเจค
+   - ทำการแก้ไขเนื้อหาโค้ดให้เป็นไปตามที่ต้องการ
+   - และทำการ build หลังจากเรียบร้อยแล้วทำการ flash และ monitor
+4. แสดงผลการทำ project
+   - จะมีการแสดงผลดังรูป
+     ![image](https://github.com/user-attachments/assets/6b5711fc-392e-4e10-832e-e10c24243937)
+* วนลูปนับถอยหลังจาก 10 ถึง 0 วินาที ใช้เวลา 1 วินาที เหมือนเดิม (vTaskDelay(1000 / portTICK_PERIOD_MS))
+และจะทำการ restart ข้อมูลใหม่
+* แสดงข้อความแสดงข้อความ "Hello from ESP32!"
+* แสดงจำนวน CPU cores
+* ตรวจสอบว่าชิปมี WiFi หรือ Bluetooth โดยตรวจสอบผ่าน chip_info.features
+(ใช้esp_chip_info ดึงข้อมูลชิปและเก็บลงในตัวแปร chip_info)
+5. สรุปผลการทำ project
+   - โปรเจคแสดงชิปและขนาดหน่วยความจำที่เหลืออยู่
+   - ใช้ในการตรวจสอบสถานะการทำงานของ ESP32 แสดงชิปและขนาดหน่วยความจำที่เหลืออยู่ 
